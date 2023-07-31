@@ -1,10 +1,24 @@
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 const app = express();
 const port = 4000;
 const SECRET_KEY = "qwer1234!@#$";
 const auth = require("./route/auth");
+
+const username = "root";
+const password = "example";
+const host = "db";
+const db_port = 27017;
+const dbName = "database";
+
+const uri = `mongodb://${username}:${password}@${host}:${db_port}/${dbName}?authSource=admin`;
+
+mongoose
+  .connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("MongoDB connected"))
+  .catch((error) => console.error("Error connecting to MongoDB:", error));
 
 app.use(cors());
 app.use(express.json());

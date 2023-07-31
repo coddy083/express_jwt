@@ -1,5 +1,8 @@
 const router = require("express").Router();
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+//mongodb
+const User = require("../models/user");
 
 const SECRET_KEY = "qwer1234!@#$";
 
@@ -23,6 +26,33 @@ router.use(verifyToken);
 
 router.get("/", (req, res) => {
   res.send("인증 성공");
+});
+
+//Create new user
+router.post("/register", async (req, res) => {
+  const hashedPassword = await bcrypt.hash(req.body.password, 10);
+  const newUser = new User({
+    username: req.body.username,
+    password: hashedPassword,
+    email: req.body.email,
+  });
+
+  try {
+    const savedUser = await newUser.save();
+    res.json(savedUser);
+  } catch (err) {
+    res.json({ message: err });
+  }
+});
+
+//All Users
+router.get("/all", async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (err) {
+    res.json({ message: err });
+  }
 });
 
 module.exports = router;
