@@ -32,19 +32,22 @@ router.get("/", (req, res) => {
 router.post("/register", async (req, res) => {
   console.log(req?.body);
   res.send("register");
-  // const hashedPassword = await bcrypt.hash(req.body.password, 10);
-  // const newUser = new User({
-  //   username: req.body.username,
-  //   password: hashedPassword,
-  //   email: req.body.email,
-  // });
-
-  // try {
-  //   const savedUser = await newUser.save();
-  //   res.json(savedUser);
-  // } catch (err) {
-  //   res.json({ message: err });
-  // }
+  if (req.body.username && req.body.password && req.body.email) {
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+    const newUser = new User({
+      username: req.body.username,
+      password: hashedPassword,
+      email: req.body.email,
+    });
+    try {
+      const savedUser = await newUser.save();
+      res.json(savedUser);
+    } catch (err) {
+      res.json({ message: err });
+    }
+  } else {
+    res.json({ message: "Please enter all fields" });
+  }
 });
 
 //All Users
