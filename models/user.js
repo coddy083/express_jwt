@@ -2,12 +2,12 @@ const mongoose = require("mongoose");
 
 // User 스키마 정의
 const UserSchema = new mongoose.Schema({
-  username: {
+  uid: {
     type: String,
     required: true,
     unique: true,
   },
-  password: {
+  username: {
     type: String,
     required: true,
   },

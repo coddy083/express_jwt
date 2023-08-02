@@ -1,10 +1,12 @@
 const express = require("express");
 const cors = require("cors");
-const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const app = express();
 const port = 4000;
-const SECRET_KEY = "qwer1234!@#$";
+const provider = require("./route/provider");
+const service = require("./route/service");
+const product = require("./route/product");
+const user = require("./route/user");
 const auth = require("./route/auth");
 
 const username = "root";
@@ -20,38 +22,25 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((error) => console.error("Error connecting to MongoDB:", error));
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+const origins = [
+  "http://localhost:3000",
+  "http://localhost:4000",
+  "http://localhost:5500",
+];
+
+app.use(
+  cors({
+    origin: origins,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  })
+);
+
+app.get("/", (req, res) => res.send("Hello World!"));
 app.use("/auth", auth);
+app.use("/provider", provider);
+app.use("/service", service);
+app.use("/product", product);
+app.use("/users", user);
 
-const user = {
-  id: 1,
-  username: "test",
-  password: "test",
-  email: "test@test.com",
-};
-
-const helloApi = (req, res) => {
-  res.send("Hello World!");
-};
-
-const loginApi = (req, res) => {
-  const expiresIn = 30;
-  jwt.sign({ user }, SECRET_KEY, { expiresIn }, (err, token) => {
-    if (err) {
-      res.status(500).json({ error: "Failed to generate token" });
-    } else {
-      res.cookie("token", token, {
-        httpOnly: false,
-        secure: false,
-        expires: new Date(Date.now() + expiresIn * 1000),
-      });
-      res.send("login");
-    }
-  });
-};
-
-app.get("/", helloApi);
-app.get("/login", loginApi);
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));

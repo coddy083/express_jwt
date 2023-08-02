@@ -1,61 +1,52 @@
 const router = require("express").Router();
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-//mongodb
+const dotenv = require("dotenv");
 const User = require("../models/user");
+const bodyParser = require("body-parser");
 
-const SECRET_KEY = "qwer1234!@#$";
+router.use(bodyParser.json());
 
-const verifyToken = (req, res, next) => {
-  const token = req.headers.cookie ? req.headers.cookie.split("=")[1] : null;
-  if (!token) {
-    res.status(401).json({ error: "Unauthorized" });
-  } else {
-    jwt.verify(token, SECRET_KEY, (err, decoded) => {
-      if (err) {
-        res.status(401).json({ error: "Unauthorized" });
-      } else {
-        req.decoded = decoded;
-        next();
-      }
+dotenv.config();
+const SECRET_KEY = process.env.SECRET_KEY;
+//body-parser
+
+const loginApi = async (req, res) => {
+  const expiresIn = 300;
+  if (!req.body) return res.status(400).json({ error: "Bad Request" });
+  const userInfo = req.body;
+  const uid = userInfo.uid;
+
+  // Find or create user in MongoDB
+  try {
+    const signUser = await User.findOneAndUpdate({ uid: uid }, userInfo, {
+      upsert: true,
+      new: true,
     });
+
+    jwt.sign({ signUser }, SECRET_KEY, { expiresIn }, (err, token) => {
+      if (err) {
+        console.log(err);
+        return res.status(500).json({ error: "Login Error" });
+      }
+      res.cookie("token", token, {
+        maxAge: expiresIn * 1000,
+        // httpOnly: true,
+        // secure: false,
+      });
+      res.send("Login Success");
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-router.use(verifyToken);
+const logoutApi = (req, res) => {
+  res.clearCookie("token");
+  res.send("Logout Success");
+};
 
-router.get("/", (req, res) => {
-  res.send("인증 성공");
-});
-
-//Create new user
-router.post("/register", async (req, res) => {
-  if (req.body.username && req.body.password && req.body.email) {
-    const hashedPassword = await bcrypt.hash(req.body.password, 10);
-    const newUser = new User({
-      username: req.body.username,
-      password: hashedPassword,
-      email: req.body.email,
-    });
-    try {
-      const savedUser = await newUser.save();
-      res.json(savedUser);
-    } catch (err) {
-      res.json({ message: err });
-    }
-  } else {
-    res.json({ message: "Please enter all fields" });
-  }
-});
-
-//All Users
-router.get("/all", async (req, res) => {
-  try {
-    const users = await User.find();
-    res.json(users);
-  } catch (err) {
-    res.json({ message: err });
-  }
-});
+router.get("/logout", logoutApi);
+router.post("/login", loginApi);
 
 module.exports = router;
